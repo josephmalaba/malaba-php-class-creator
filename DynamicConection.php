@@ -11,10 +11,11 @@ class DynamicConnection {
     private $pdo;
     private $result;
     
-    public function connect($host,$user,$pwd){
-         $this->dsn = 'mysql:dbname=waubani_db;host='.$host;
-         $this->user = $user;
-         $this->password = $pwd;
+    
+    public function DynamicConnection($host,$usr,$pwd,$db){
+         $dsn = "mysql:dbname=$db;host=".$host;
+         $user = $usr;
+         $password = $pwd;
     
     
         try{
