@@ -7,15 +7,15 @@ include_once('./DynamicConection.php');
 
 class ClassCreator {
     //properties
-    private $connection;
     private $foldername;
     private $classes;
     private $properties;
     private $methods;
+    private $con;
     
     //constructor
     function _construct(){
-        $this->connection = new DynamicConnection();
+        //$this->con = new DynamicConnection();
     }
     
     //other methods
@@ -35,6 +35,11 @@ class ClassCreator {
             $statemente = "elseif( ".$condition." ){ ".$outcome.";}";
             return $statemente;
         }
+    
+    //conmection function
+    public function startConnection($host,$user,$pwd,$db){
+        $this->con = new DynamicConnection($host,$user,$pwd,$db);
+    }
     
     //table content analyzing functions
     
@@ -59,8 +64,22 @@ class ClassCreator {
     }
     
     //function to add setters
-    public funtion addSetters($tableName){
-        $sql = "DESCRIBE $tableName";    
+    public function addSetters($tableName){
+        $sql = "DESCRIBE $tableName";
+        $this->con->execute_query($sql);
+        $tableresult = $this->con->get_result();
+
+        $setter = '';
+        foreach($tableresult as $row){
+            $setter.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
+            $setter.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
+            
+            $setter.= "\t$"."this->con->execute_query($"."updateQr);\n\n";
+            
+            $setter.= "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
+            $setter.= "}\n\n";
+        }
+        return $setter;
     }
     
     //function to add getters
