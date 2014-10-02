@@ -5,25 +5,31 @@
 
 class DynamicConnection {
     //properties
-    private $dbName;
-    private $userName;
+    private $dsn ;
+    private $user;
     private $password;
-    private $connection;
+    private $pdo;
+    private $result;
     
-    //constructor
-    function _construct(){
+    public function connect($host,$user,$pwd){
+         $this->dsn = 'mysql:dbname=waubani_db;host='.$host;
+         $this->user = $user;
+         $this->password = $pwd;
+    
+    
+        try{
+            $this->pdo = new PDO($dsn,$user,$password);
+        }catch(PDOException $e){
+           echo  "Connection Failed : ". $e->getMessage();
+        }
     }
     
-    //methods
-    
-    //setters
-    public function setDbName($DbName){
-        $this->connection = $DbName;
+    public function execute_query($qr){
+        $this->result = $this->pdo->query($qr);
     }
     
-    //getters
-    public function getDbName(){
-        return $this->connection;
+    public function get_result(){
+        return $this->result;
     }
 }
 
