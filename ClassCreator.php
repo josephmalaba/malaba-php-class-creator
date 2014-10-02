@@ -40,14 +40,28 @@ class ClassCreator {
     
     
     //file creating functions
-    
-    //file writing functions
+    public function createFile($fileName,$content){
+        $phpfile = fopen($fileName.".php", "w") ;
+        fwrite($phpfile, $content);
+        fclose($phpfile);
+    }
+    //file writing functions (the above funtion also does the same thing)
     
     //file reading functions
     
     //folder (diroctory creating functions)
+    public function createDirectory($directory){
+        if(mkdir($directory)){
+            return true;
+        }else{
+            return false;
+        }
+    }
     
     //function to add setters
+    public funtion addSetters($tableName){
+        $sql = "DESCRIBE $tableName";    
+    }
     
     //function to add getters
     
