@@ -74,9 +74,9 @@ class ClassCreator {
             $setter.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
             $setter.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
             
-            $setter = "\t$"."this->con->execute_query($"."updateQr);\n\n";
+            $condition = "\t$"."this->con->execute_query($"."updateQr);\n\n";
             
-            $condition = $this->addif();
+            $setter.= $this->addIf($condition,$outcome);
             
             $setter.= "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
             $setter.= "}\n\n";
@@ -85,8 +85,34 @@ class ClassCreator {
     }
     
     //function to add getters
+    public function addGetters($tableName){
+        $getter = '';
+        foreach($tableresult as $row){
+            $getter.= "public function get".ucfirst(strtolower($row['Field']))."(){\n";
+            $getter.= "\t return $"."this->".strtolower($row['Field']).";\n";
+            $getter.= "}\n\n";
+        }
+        return $getter;
+    }
     
     //funtion to add properties
+    public function addSetters($tableName){
+        $sql = "DESCRIBE $tableName";
+        $this->con->execute_query($sql);
+        $tableresult = $this->con->get_result();
+
+        $property = '';
+        foreach($tableresult as $row){
+            $property.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
+            $property.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
+            
+            $setter.= $this->addIf($condition,$outcome);
+            
+            $property.= "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
+            $property.= "}\n\n";
+        }
+        return $property;
+    }
     
     //function to add load($id) method, for fetchting and setting properties from the database
     
