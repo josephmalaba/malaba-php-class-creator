@@ -22,7 +22,7 @@ class ClassCreator {
         //conditioning functions
         
         public function addIf($condition,$outcome){
-            $statemente = "if( ".$condition." ){ ".$outcome.";}";
+            $statemente = "if( ".$condition." ){\n\t\t".$outcome.";\n\t}";
             return $statemente;
         }
         
@@ -32,7 +32,7 @@ class ClassCreator {
         }
         
         public function addElseIf($condition,$outcome){
-            $statemente = "elseif( ".$condition." ){ ".$outcome.";}";
+            $statemente = "elseif( ".$condition." ){\n\t\t".$outcome."; \n\t}";
             return $statemente;
         }
     
@@ -74,7 +74,9 @@ class ClassCreator {
             $setter.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
             $setter.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
             
-            $setter.= "\t$"."this->con->execute_query($"."updateQr);\n\n";
+            $setter = "\t$"."this->con->execute_query($"."updateQr);\n\n";
+            
+            $condition = $this->addif();
             
             $setter.= "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
             $setter.= "}\n\n";
