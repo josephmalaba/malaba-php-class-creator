@@ -74,11 +74,11 @@ class ClassCreator {
             $setter.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
             $setter.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
             
-            $condition = "\t$"."this->con->execute_query($"."updateQr);\n\n";
+            $condition = " $"."this->con->execute_query($"."updateQr) ";
             
+            $outcome = "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
             $setter.= $this->addIf($condition,$outcome);
             
-            $setter.= "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
             $setter.= "}\n\n";
         }
         return $setter;
@@ -96,30 +96,67 @@ class ClassCreator {
     }
     
     //funtion to add properties
-    public function addSetters($tableName){
+    public function addProperty($tableName){
         $sql = "DESCRIBE $tableName";
         $this->con->execute_query($sql);
         $tableresult = $this->con->get_result();
 
         $property = '';
         foreach($tableresult as $row){
-            $property.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
-            $property.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
-            
-            $setter.= $this->addIf($condition,$outcome);
-            
-            $property.= "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
-            $property.= "}\n\n";
+            $property.= "\t\\\\Properties\n";
+            $property.= "\tprivate $".lcfirst($row['Field']).";\n";
+            $property.= "\tprivate $"."con".";\\\\Connection Object \n";
+            $property.= "\n\n";
         }
         return $property;
     }
     
     //function to add load($id) method, for fetchting and setting properties from the database
+    public function addLoader($tableName){
+        $sql = "DESCRIBE $tableName";
+        $this->con->execute_query($sql);
+        $tableresult = $this->con->get_result();
+        
+        //Checking for Primary Keys
+        $key = '';
+        $keyCondtion='';
+        $keyVal = 0;
+        $properties='';
+        foreach($tableresult as $row){
+            if($row['Key']=='PRI'){
+                if($keyVal==0){
+                    $key.=" $".$row['Field']." ";
+                    $keyCondtion.=" WHERE ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
+                }else{
+                    $keyCondtion.=" AND ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
+                    $key.=",$".$row['Field']." ";
+                }
+            }
+            $properties.= "\t\t\t$"."this->".lcfirst($row['Field'])."= $"."row[\"".$row['Field']."\"];\n";
+            $keyVal++;
+        }
+        
+        $loader = '';
+        foreach($tableresult as $row){
+            $loader.= "public function load($key){\n"; //first add keys(primary keys if any) in parameter list
+            $loader.= "\t$"."selectQr = \"SELECT * FROM $tableName $keyCondtion";
+            
+            $condition = " $"."this->con->execute_query($"."updateQr) ";
+            
+            $outcome = "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
+            $setter.= $this->addIf($condition,$outcome);
+            
+            $setter.= "}\n\n";
+        }
+        return $loader;
+    }
+    
     
     //function to add create($p1,$p2....) method which will be used for insert
         
     //setters (for update)
     
     //getters (for select)
+    
 }
 ?>
