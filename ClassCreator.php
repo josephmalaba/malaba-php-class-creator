@@ -217,7 +217,7 @@ class ClassCreator {
     }
 }
 
-$create = new ClassCreator();
-$create->startConnection('localhost','root','','ehms_db');
-$create->createClases();
+/* $create = new ClassCreator();
+$create->startConnection('localhost','root','','db_name');
+$create->createClases(); */
 ?>
