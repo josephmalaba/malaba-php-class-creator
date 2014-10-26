@@ -56,7 +56,7 @@ class ClassCreator {
     
     //folder (diroctory creating functions)
     public function createDirectory($directory){
-        if(mkdir($directory)){
+        if(@mkdir($directory)){
             return true;
         }else{
             return false;
@@ -74,9 +74,9 @@ class ClassCreator {
             $setter.= "public function set".ucfirst(strtolower($row['Field']))."($".strtolower($row['Field'])."){\n";
             $setter.= "\t$"."updateQr = \"UPDATE $tableName SET ".$row['Field']."='$".strtolower($row['Field'])."'\";\n\n";
             
-            $condition = " $"."this->con->execute_query($"."updateQr) ";
+            $condition = "$"."this->con->execute_query($"."updateQr)";
             
-            $outcome = "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
+            $outcome = "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field'])."";
             $setter.= $this->addIf($condition,$outcome);
             
             $setter.= "}\n\n";
@@ -86,6 +86,10 @@ class ClassCreator {
     
     //function to add getters
     public function addGetters($tableName){
+        $sql = "DESCRIBE $tableName";
+        $this->con->execute_query($sql);
+        $tableresult = $this->con->get_result();
+        
         $getter = '';
         foreach($tableresult as $row){
             $getter.= "public function get".ucfirst(strtolower($row['Field']))."(){\n";
@@ -101,14 +105,12 @@ class ClassCreator {
         $this->con->execute_query($sql);
         $tableresult = $this->con->get_result();
 
-        $property = '';
+        $property = "//Properties\n";
+        $property.= "\tprivate $"."con".";//Connection Object \n";
         foreach($tableresult as $row){
-            $property.= "\t\\\\Properties\n";
             $property.= "\tprivate $".lcfirst($row['Field']).";\n";
-            $property.= "\tprivate $"."con".";\\\\Connection Object \n";
-            $property.= "\n\n";
         }
-        return $property;
+        return $property."\n\n";
     }
     
     //function to add load($id) method, for fetchting and setting properties from the database
@@ -139,12 +141,12 @@ class ClassCreator {
         $loader = '';
         foreach($tableresult as $row){
             $loader.= "public function load($key){\n"; //first add keys(primary keys if any) in parameter list
-            $loader.= "\t$"."selectQr = \"SELECT * FROM $tableName $keyCondtion";
+            $loader.= "\t$"."selectQr = \"SELECT * FROM $tableName $keyCondtion ;";
             
-            $condition = " $"."this->con->execute_query($"."updateQr) ";
+            $condition = " $"."this->con->execute_query($"."selectQr) ";
             
-            $outcome = "\t$"."this->".strtolower($row['Field'])."=$".strtolower($row['Field']).";\n";
-            $setter.= $this->addIf($condition,$outcome);
+            $outcome = $properties;
+            $loader.= $this->addIf($condition,$outcome);
             
             $setter.= "}\n\n";
         }
@@ -153,10 +155,69 @@ class ClassCreator {
     
     
     //function to add create($p1,$p2....) method which will be used for insert
+    public function addCreator($tableName){
+        $sql = "DESCRIBE $tableName";
+        $this->con->execute_query($sql);
+        $tableresult = $this->con->get_result();
         
-    //setters (for update)
-    
-    //getters (for select)
-    
+        //Checking for Primary Keys
+        $fieldVal = '';
+        $propertyList='';
+        $propertyListValue='';
+	$keyVal = 0;
+        foreach($tableresult as $row){
+            if($row['Extra']!='auto_increment'){
+                if($keyVal==0){
+                 $fieldVal.=" $".$row['Field']." ";
+                 $propertyList.=" '".$row['Field']."' ";
+                 $propertyListValue.=" '$".$row['Field']."' ";
+                }else{
+                    $fieldVal.=",$".$row['Field']." ";
+                    $propertyList.=",'".$row['Field']."' ";
+                    $propertyListValue.=",'$".$row['Field']."' ";
+                }
+            }
+            $keyVal++;
+        }
+        
+        $creator = '';
+        foreach($tableresult as $row){
+            $creator.= "public function create".ucfirst($tableName)."($fieldVal){\n"; //first add keys(primary keys if any) in parameter list
+            $selectQr = "\t$"."insertQr = \"INSERT INTO $tableName($propertyList) VALUES($propertyListValue);";
+			
+            $condition = " $"."this->con->execute_query($"."insertQr) ";
+            $outcome = $properties;
+            $creator.= $this->addIf($condition,$outcome);
+            
+            $creator.= "}\n\n";
+        }
+        return $creator;
+    }
+    //a function to call all other functions and create all classes from db...
+    public function createClases(){
+        $sql = "SHOW TABLES";
+        $this->con->execute_query($sql);
+        $tableresult = $this->con->get_result();
+        foreach($tableresult as $row){
+            $properties = $this->addProperty($row[0]);
+            $loader = $this->addLoader($row[0]);
+            $setters = $this->addSetters($row[0]);
+            $getters = $this->addGetters($row[0]);
+            $creator = $this->addCreator($row[0]);
+            
+            $filecontent = "<?php\n// a class reflecting table ".$row[0]."\n";
+            $filecontent.="class ".ucfirst(str_replace('_','',str_replace('tbl','',strtolower($row[0]))));
+            $filecontent.="{\n".$properties.$loader.$setters.$getters.$creator."}\n?>";
+            
+            $directory = "./ClassCreator";
+            $this->createDirectory($directory);
+            $fileName = $directory."/".ucfirst(str_replace('_','',str_replace('tbl','',strtolower($row[0])))).".php";
+            $this->createFile($fileName,$filecontent);
+        }
+    }
 }
+
+$create = new ClassCreator();
+$create->startConnection('localhost','root','','ehms_db');
+$create->createClases();
 ?>
